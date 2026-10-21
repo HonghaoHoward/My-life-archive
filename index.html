@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的人生档案</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#182230;--muted:#697586;--line:#e6eaf0;--accent:#3157d5;--soft:#eef2ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}header{background:linear-gradient(130deg,#182c63,#3157d5);color:#fff;padding:28px 20px 34px}header,.wrap{max-width:1100px;margin:auto}header .wrap{padding:0}h1{font-size:28px;margin:0 0 6px}header p{margin:0;color:#dce5ff}.wrap{padding:22px 18px 48px}.notice{background:#fff8e7;border:1px solid #f0d99a;border-radius:12px;padding:12px 15px;margin-bottom:18px;color:#745415}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}.stat,.panel,.navitem{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:16px}.stat span{display:block;color:var(--muted);font-size:13px}.stat strong{font-size:25px}.nav{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px}.navitem{cursor:pointer;text-align:left;font:inherit;color:var(--ink)}.navitem b{display:block}.navitem small{color:var(--muted)}.navitem.active{border-color:var(--accent);background:var(--soft)}.layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}.panel h2{font-size:18px;margin:0 0 12px}.panel p.sub{margin:-7px 0 12px;color:var(--muted);font-size:13px}label{display:block;font-size:13px;color:var(--muted);margin:9px 0 4px}input,select,textarea{width:100%;padding:10px 11px;border:1px solid #d8dee8;border-radius:9px;background:#fff;color:var(--ink);font:inherit}textarea{min-height:82px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}button{border:0;border-radius:9px;padding:10px 14px;background:var(--accent);color:white;font:inherit;cursor:pointer;margin-top:12px}button.secondary{background:#edf0f6;color:#273449}button.danger{background:#fff0f0;color:#a62929}.items{display:grid;gap:9px}.item{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff}.item .meta{color:var(--muted);font-size:12px}.item p{margin:5px 0;white-space:pre-wrap;overflow-wrap:anywhere}.empty{color:var(--muted);padding:15px 0}.toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar button{margin:0}.search{margin-bottom:14px}.foot{color:var(--muted);font-size:12px;margin-top:20px}
+@media(max-width:720px){.stats{grid-template-columns:repeat(3,1fr)}.nav{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}h1{font-size:24px}.stat{padding:12px}.stat strong{font-size:20px}}
+</style></head>
+<body><header><div class="wrap"><h1>我的人生档案</h1><p>把每天的积累，变成看得见的人生轨迹。</p></div></header>
+<main class="wrap">
+<div class="notice"><b>隐私提示：</b>当前版本仅把数据保存在这台设备的此浏览器中，不会自动上传云端。清理浏览器数据可能导致记录丢失，请定期导出备份；不要在公共设备记录敏感信息。</div>
+<section class="stats"><div class="stat"><span>档案记录</span><strong id="count">0</strong></div><div class="stat"><span>今日新增</span><strong id="today">0</strong></div><div class="stat"><span>人生档案</span><strong>持续更新</strong></div></section>
+<nav class="nav" id="nav">
+<button class="navitem active" data-kind="diary"><b>📝 每日日记</b><small>原话与整理稿</small></button>
+<button class="navitem" data-kind="finance"><b>💰 财务记账</b><small>收入、支出与分类</small></button>
+<button class="navitem" data-kind="fitness"><b>🏋️ 健身记录</b><small>训练与体重</small></button>
+<button class="navitem" data-kind="english"><b>🔤 英语单词</b><small>词义与复习</small></button>
+<button class="navitem" data-kind="work"><b>🛠️ 工作知识库</b><small>问题、答案与关键词</small></button>
+</nav>
+<div class="search"><input id="search" placeholder="搜索所有档案内容……"></div>
+<div class="layout"><section class="panel"><h2 id="formTitle">新增每日日记</h2><p class="sub" id="formSub">建议保留原话，也写下整理后的重点。</p><form id="entryForm"><div id="fields"></div><button type="submit">保存记录</button><button type="button" class="secondary" id="clearForm">清空表单</button></form></section>
+<section class="panel"><h2>最近记录</h2><div class="toolbar"><button class="secondary" id="export">导出备份 JSON</button><button class="secondary" id="importBtn">导入备份</button><input id="importFile" type="file" accept=".json,application/json" hidden></div><div id="records" class="items" style="margin-top:14px"></div></section></div>
+<p class="foot">第一版 · 本地浏览器存储 · 云端同步与账号系统尚未启用</p>
+</main>
+<script>
+const config={
+diary:{title:'每日日记',sub:'建议保留原话，也写下整理后的重点。',fields:[['date','日期','date'],['original','今天的原话','textarea'],['summary','AI整理稿 / 今日总结','textarea'],['tags','关键词','text']]},
+finance:{title:'财务记账',sub:'记下每笔收入和支出，慢慢看清现金流。',fields:[['date','日期','date'],['direction','收支类型','select',['支出','收入']],['amount','金额（元）','number'],['category','分类','text'],['note','备注','text']]},
+fitness:{title:'健身记录',sub:'训练、体重与状态，按自己的节奏积累。',fields:[['date','日期','date'],['training','训练内容','textarea'],['weight','体重（kg）','number'],['note','状态 / 备注','text']]},
+english:{title:'英语单词',sub:'记录词义和例句，复习时更新掌握状态。',fields:[['date','记录日期','date'],['word','单词 / 短语','text'],['meaning','词义','textarea'],['example','例句','textarea'],['status','掌握状态','select',['待复习','学习中','已掌握']]]},
+work:{title:'工作知识库',sub:'沉淀工作问题、解决方案和以后要复习的知识。',fields:[['date','日期','date'],['question','问题 / 故障现象','textarea'],['answer','答案 / 解决方法','textarea'],['keywords','关键词 / 分类','text'],['status','复习状态','select',['待复习','已理解','已掌握']]]}
+};
+let kind='diary',records=JSON.parse(localStorage.getItem('lifeArchiveRecords')||'[]');
+const $=id=>document.getElementById(id), todayStr=()=>new Date().toISOString().slice(0,10);
+function renderFields(){const c=config[kind];$('formTitle').textContent='新增'+c.title;$('formSub').textContent=c.sub;$('fields').innerHTML=c.fields.map(([id,label,type,opts])=>'<label>'+label+'</label>'+(type==='textarea'?'<textarea name="'+id+'" '+(id==='date'?'':'')+'></textarea>':type==='select'?'<select name="'+id+'">'+opts.map(o=>'<option>'+o+'</option>').join('')+'</select>':'<input name="'+id+'" type="'+type+'" '+(type==='date'?'value="'+todayStr()+'"':type==='number'?'step="any"':'')+' '+(id==='date'?'required':'')+'>')).join('')}
+function val(r,keys){for(const k of keys)if(r.data[k])return r.data[k];return ''}
+function render(){const q=$('search').value.trim().toLowerCase();const filtered=records.filter(r=>(r.kind+' '+Object.values(r.data).join(' ')).toLowerCase().includes(q)).sort((a,b)=>b.created.localeCompare(a.created));$('count').textContent=records.length;$('today').textContent=records.filter(r=>r.created.slice(0,10)===todayStr()).length;$('records').innerHTML=filtered.length?filtered.slice(0,60).map(r=>'<article class="item"><div class="meta">'+config[r.kind].title+' · '+(r.data.date||r.created.slice(0,10))+'</div><p><b>'+escapeHtml(val(r,['word','question','original','training','category'])||config[r.kind].title)+'</b></p><p>'+escapeHtml(val(r,['summary','meaning','answer','note','example','original','training']))+'</p><div class="toolbar"><button class="danger" data-delete="'+r.id+'">删除</button></div></article>').join(''):'<div class="empty">还没有记录。先从左侧添加第一条吧。</div>'}
+function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('nav').addEventListener('click',e=>{const b=e.target.closest('[data-kind]');if(!b)return;kind=b.dataset.kind;document.querySelectorAll('.navitem').forEach(x=>x.classList.toggle('active',x===b));renderFields()});
+$('entryForm').addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target).entries());records.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),kind,data,created:new Date().toISOString()});localStorage.setItem('lifeArchiveRecords',JSON.stringify(records));e.target.reset();renderFields();render()});
+$('clearForm').onclick=()=>$('entryForm').reset();$('search').addEventListener('input',render);
+$('records').addEventListener('click',e=>{const b=e.target.closest('[data-delete]');if(!b)return;if(confirm('确定删除这条记录吗？')){records=records.filter(r=>r.id!==b.dataset.delete);localStorage.setItem('lifeArchiveRecords',JSON.stringify(records));render()}});
+$('export').onclick=()=>{const blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),records},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='我的人生档案备份-'+todayStr()+'.json';a.click();URL.revokeObjectURL(a.href)};
+$('importBtn').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());const incoming=Array.isArray(d)?d:d.records;if(!Array.isArray(incoming))throw Error();if(confirm('导入将替换当前浏览器中的所有档案。请确认已先导出备份。继续吗？')){records=incoming;localStorage.setItem('lifeArchiveRecords',JSON.stringify(records));render()}}catch(err){alert('文件格式不正确，无法导入。')}e.target.value=''};
+renderFields();render();
+</script></body></html>
