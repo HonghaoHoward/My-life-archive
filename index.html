@@ -10,7 +10,7 @@
 <section class="stats"><div class="stat"><small>档案总数</small><b id="total">0</b><em>条记录</em></div><div class="stat"><small>今天新增</small><b id="today">0</b><em>条记录</em></div><div class="stat"><small>正在建设</small><b>01</b><em>人生档案</em></div></section>
 <nav class="tabs" id="tabs"><button class="tab active" data-kind="journal">✳ 日常手记</button><button class="tab" data-kind="work">⌘ 工作与成长</button><button class="tab" data-kind="english">A 英语学习</button><button class="tab" data-kind="fitness">↗ 健身记录</button><button class="tab" data-kind="finance">￥ 财务账本</button><button class="tab" data-kind="goals">◎ 目标与兴趣</button></nav>
 <div class="grid"><section class="card"><h3 id="formTitle">写下一条手记</h3><p class="muted" id="formHint">保留你的原话，也可以补充今天的总结。</p><form id="form"><div id="fields"></div><button class="primary" type="submit">保存这条记录 ↗</button></form></section>
-<section class="card"><h3>档案时间线</h3><p class="muted">选择日期查看当天记录；清除日期即可查看全部。</p><div class="field"><label for="dateFilter">按日期查看</label><input id="dateFilter" type="date"></div><input class="search" id="search" placeholder="搜索标题、内容或关键词…"><div class="entries" id="entries"></div><p class="foot"><b>小提醒：</b>导出的 JSON 文件可作为个人备份，之后也能重新导入。</p></section></div>
+<section class="card"><h3>档案时间线</h3><p class="muted">选择日期查看当天记录；清除日期即可查看全部。</p><div class="field"><label for="dateFilter">按日期查看</label><input id="dateFilter" type="date"><div class="toolbar" style="margin-top:8px"><button class="secondary" id="todayFilterBtn" type="button">看今天</button><button class="secondary" id="clearDateBtn" type="button">查看全部日期</button></div><p class="muted" id="dateFilterStatus" style="margin:8px 0 0">当前显示：全部日期</p></div><input class="search" id="search" placeholder="搜索标题、内容或关键词…"><div class="entries" id="entries"></div><p class="foot"><b>小提醒：</b>导出的 JSON 文件可作为个人备份，之后也能重新导入。</p></section></div>
 <p class="foot">PERSONAL ARCHIVE · 一个属于自己的长期记录空间</p></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0"></script>
 <script>
@@ -32,7 +32,10 @@ function render(){const q=$('search').value.trim().toLowerCase(),day=$('dateFilt
 $('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-kind]');if(!b)return;kind=b.dataset.kind;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));renderFields()});
 $('form').addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target).entries());items.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),kind,data,created:new Date().toISOString()});save();e.target.reset();renderFields();render()});
 $('entries').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(!b)return;if(confirm('确定删除这条记录？')){items=items.filter(x=>x.id!==b.dataset.del);save();render()}});
-$('search').addEventListener('input',render);$('dateFilter').addEventListener('change',render);
+function updateDateFilterStatus(){const d=$('dateFilter').value;$('dateFilterStatus').textContent=d?'当前显示：'+d+' 的记录':'当前显示：全部日期'}
+$('search').addEventListener('input',render);$('dateFilter').addEventListener('change',()=>{updateDateFilterStatus();render()});
+$('todayFilterBtn').addEventListener('click',()=>{$('dateFilter').value=today();updateDateFilterStatus();render()});
+$('clearDateBtn').addEventListener('click',()=>{$('dateFilter').value='';updateDateFilterStatus();render()});
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),items},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='人生档案备份-'+today()+'.json';a.click();URL.revokeObjectURL(a.href)};
 $('importBtn').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text()),incoming=Array.isArray(d)?d:d.items;if(!Array.isArray(incoming))throw Error();if(confirm('导入会替换当前浏览器内的记录，建议先导出备份。继续吗？')){items=incoming;save();render()}}catch(err){alert('无法识别此备份文件。')}e.target.value=''};
 
