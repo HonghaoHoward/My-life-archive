@@ -6,12 +6,13 @@
 </style></head><body>
 <header class="hero"><div class="inner"><div class="top"><div class="brand">PERSONAL ARCHIVE / 01</div><div class="pill">持续生长 · 不必着急</div></div><h1>把人生，整理成<br><strong>自己的作品。</strong></h1><p>这里记录工作、学习、身体、金钱和每天的想法。不是为了证明什么，只是让走过的路有迹可循。</p></div></header>
 <main class="main"><div class="intro"><div><h2>我的人生档案</h2><p id="dateLine">一点一点积累，回头就能看见变化。</p></div><div class="toolbar"><button class="secondary" id="exportBtn">导出备份</button><button class="secondary" id="importBtn">导入备份</button><input type="file" id="importFile" accept=".json,application/json" hidden></div></div>
-<section class="card" style="margin-bottom:18px"><h3>云端档案连接</h3><p class="muted">此功能正在接入。请先保留原有记录并导出备份；登录和云端同步启用前，本机数据不会自动上传。</p><p id="cloudStatus" class="muted">云端服务尚未连接。</p></section><div class="notice">隐私提示：网页代码公开，私人记录应存放在受登录保护的云端数据库。请勿将管理密钥公开。</div>
+<section class="card" style="margin-bottom:18px"><h3>云端档案连接</h3><p class="muted">注册或登录后，点击“同步档案”合并本机与云端记录。首次同步不会主动删除记录。</p><div class="twocol"><div class="field"><label for="cloudEmail">邮箱</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="你的邮箱"></div><div class="field"><label for="cloudPassword">密码</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="至少 6 位"></div></div><div class="toolbar"><button class="primary" id="signUpBtn" type="button">注册账号</button><button class="secondary" id="signInBtn" type="button">登录</button><button class="secondary" id="syncBtn" type="button" disabled>同步档案</button><button class="secondary" id="signOutBtn" type="button" disabled>退出登录</button></div><p id="cloudStatus" class="muted" role="status" style="margin-top:12px">尚未登录。请保留本机 JSON 备份。</p></section><div class="notice">隐私提示：网页代码公开，私人记录应存放在受登录保护的云端数据库。请勿将管理密钥公开。</div>
 <section class="stats"><div class="stat"><small>档案总数</small><b id="total">0</b><em>条记录</em></div><div class="stat"><small>今天新增</small><b id="today">0</b><em>条记录</em></div><div class="stat"><small>正在建设</small><b>01</b><em>人生档案</em></div></section>
 <nav class="tabs" id="tabs"><button class="tab active" data-kind="journal">✳ 日常手记</button><button class="tab" data-kind="work">⌘ 工作与成长</button><button class="tab" data-kind="english">A 英语学习</button><button class="tab" data-kind="fitness">↗ 健身记录</button><button class="tab" data-kind="finance">￥ 财务账本</button><button class="tab" data-kind="goals">◎ 目标与兴趣</button></nav>
 <div class="grid"><section class="card"><h3 id="formTitle">写下一条手记</h3><p class="muted" id="formHint">保留你的原话，也可以补充今天的总结。</p><form id="form"><div id="fields"></div><button class="primary" type="submit">保存这条记录 ↗</button></form></section>
 <section class="card"><h3>档案时间线</h3><p class="muted">选择日期查看当天记录；清除日期即可查看全部。</p><div class="field"><label for="dateFilter">按日期查看</label><input id="dateFilter" type="date"></div><input class="search" id="search" placeholder="搜索标题、内容或关键词…"><div class="entries" id="entries"></div><p class="foot"><b>小提醒：</b>导出的 JSON 文件可作为个人备份，之后也能重新导入。</p></section></div>
 <p class="foot">PERSONAL ARCHIVE · 一个属于自己的长期记录空间</p></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0"></script>
 <script>
 const schema={
 journal:{title:'写下一条手记',hint:'保留你的原话，也可以补充今天的总结。',fields:[['date','日期','date'],['title','标题','text'],['original','今天的原话','textarea'],['summary','整理与感想','textarea'],['tags','关键词','text']]},
@@ -34,5 +35,39 @@ $('entries').addEventListener('click',e=>{const b=e.target.closest('[data-del]')
 $('search').addEventListener('input',render);$('dateFilter').addEventListener('change',render);
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),items},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='人生档案备份-'+today()+'.json';a.click();URL.revokeObjectURL(a.href)};
 $('importBtn').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text()),incoming=Array.isArray(d)?d:d.items;if(!Array.isArray(incoming))throw Error();if(confirm('导入会替换当前浏览器内的记录，建议先导出备份。继续吗？')){items=incoming;save();render()}}catch(err){alert('无法识别此备份文件。')}e.target.value=''};
+
+const SUPABASE_URL='https://purasvjmwcodnfwwrgjq.supabase.co';
+const SUPABASE_KEY='sb_publishable_ieH2LLEIGn2l1bqWUjpQ9Q_KOoka7-Y';
+const cloud=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let cloudUser=null;
+function cloudMsg(s){$('cloudStatus').textContent=s}
+function cloudButtons(){ $('syncBtn').disabled=!cloudUser; $('signOutBtn').disabled=!cloudUser; $('signInBtn').disabled=!!cloudUser; $('signUpBtn').disabled=!!cloudUser; }
+async function cloudAuth(mode){
+ const email=$('cloudEmail').value.trim(),password=$('cloudPassword').value;
+ if(!email||!password){cloudMsg('请先填写邮箱和密码。');return}
+ if(password.length<6){cloudMsg('密码至少需要 6 位。');return}
+ cloudMsg(mode==='signup'?'正在注册…':'正在登录…');
+ try{const r=mode==='signup'?await cloud.auth.signUp({email,password}):await cloud.auth.signInWithPassword({email,password});if(r.error)throw r.error;cloudUser=r.data.user||null;cloudButtons();if(mode==='signup'&&!r.data.session){cloudMsg('注册已提交。如需邮箱确认，请先点击确认邮件，再回来登录。');return}cloudMsg(cloudUser?'已登录：'+cloudUser.email+'。点击“同步档案”。':'操作已提交，请检查邮箱后登录。')}
+ catch(e){cloudMsg('操作失败：'+(e.message||'请稍后重试'))}
+}
+$('signUpBtn').addEventListener('click',()=>cloudAuth('signup'));
+$('signInBtn').addEventListener('click',()=>cloudAuth('signin'));
+$('signOutBtn').addEventListener('click',async()=>{const r=await cloud.auth.signOut();if(r.error){cloudMsg('退出失败：'+r.error.message);return}cloudUser=null;cloudButtons();cloudMsg('已退出登录；本机记录仍保留。')});
+$('syncBtn').addEventListener('click',async()=>{
+ if(!cloudUser){cloudMsg('请先登录。');return}
+ const b=$('syncBtn');b.disabled=true;cloudMsg('正在合并本机与云端记录…');
+ try{
+  const {data:rows,error}=await cloud.from('archive_records').select('id,category,record_date,title,content,metadata,created_at').eq('user_id',cloudUser.id);if(error)throw error;
+  const known=new Set((rows||[]).map(r=>r.metadata&&r.metadata.local_id).filter(Boolean).map(String));
+  const fresh=items.filter(x=>!known.has(String(x.id)));
+  if(fresh.length){const payload=fresh.map(x=>({user_id:cloudUser.id,category:x.kind,record_date:(x.data&&x.data.date)||String(x.created||new Date().toISOString()).slice(0,10),title:(x.data&&(x.data.title||x.data.word))||'未命名记录',content:JSON.stringify(x.data||{}),metadata:{local_id:String(x.id),original_created:x.created}}));const {error:e}=await cloud.from('archive_records').insert(payload);if(e)throw e}
+  const {data:all,error:e2}=await cloud.from('archive_records').select('id,category,record_date,title,content,metadata,created_at').eq('user_id',cloudUser.id);if(e2)throw e2;
+  const ids=new Set(items.map(x=>String(x.id)));
+  for(const r of (all||[])){const lid=r.metadata&&r.metadata.local_id;const id=lid?String(lid):'cloud-'+r.id;if(ids.has(id))continue;let data={};try{data=JSON.parse(r.content||'{}')}catch(e){data={title:r.title,detail:String(r.content||'')}}items.push({id,kind:r.category||'journal',data,created:(r.metadata&&r.metadata.original_created)||r.created_at||new Date().toISOString()});ids.add(id)}
+  save();render();cloudMsg('同步完成：本机上传 '+fresh.length+' 条，合并后共 '+items.length+' 条。其他设备登录后也点击同步。');
+ }catch(e){cloudMsg('同步未完成：'+(e.message||'请检查网络、登录状态和数据库权限。'))}
+ finally{b.disabled=!cloudUser}
+});
+cloud.auth.getSession().then(({data})=>{cloudUser=data.session&&data.session.user||null;cloudButtons();if(cloudUser)cloudMsg('已恢复登录：'+cloudUser.email+'。点击“同步档案”。')});
 renderFields();render();
 </script></body></html>
